@@ -169,7 +169,7 @@ Z – 僵尸态
 
 7. 调整进程优先级==nice==;==renice==
 
-8. ==pstack pid==：跟踪进程栈空间
+8. ==pstack pid==：[跟踪进程栈空间](https://nanxiao.me/linux-pstack/)，ubuntu系统安装可能会出现可执行文件==/usr/bin/pstack==出现乱码，需要手动更改该文件。
 
 9. ==strace==：跟踪进程执行时的系统调用和所接收的信号
 
@@ -205,4 +205,5 @@ Z – 僵尸态
 2. 硬链接和软链接的区别
 
 
-参看
+
+参看[Linux Tools Quick Tutorial](http://linuxtools-rst.readthedocs.io/zh_CN/latest/base/index.html)
