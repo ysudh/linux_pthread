@@ -116,15 +116,15 @@ int fun1()
 
 >其他出现段错误的情况，==使用未初始化的内存；在内存被释放后进行读/写；从已分配内存块的尾部进行读/写；不匹配地使用malloc/new/new[] 和 free/delete/delete[]；两次释放内存==等。并[利用valgrind检测](https://www.oschina.net/translate/valgrind-memcheck?cmp)
 
-### c++中内存泄漏情况
+### [c++中内存泄漏情况](https://blog.csdn.net/lovely20085901/article/details/39050085)
 
-#### 不匹配使用==new[]== 和 ==delete[]==
+#### 1. 不匹配使用==new[]== 和 ==delete[]==
 
 ``` cpp
 int *p = new int[100];
 delete []p;//new[],delete []不匹配，导致99对象的内存空间被泄漏。
 ```
-#### ==delet== void * 的指针，导致没有调用到对象的析构函数，析构的所有清理工作都没有去执行从而导致内存的泄露； 
+#### 2. ==delet== void * 的指针，导致没有调用到对象的析构函数，析构的所有清理工作都没有去执行从而导致内存的泄露； 
 
 ``` cpp
 class Object {
@@ -151,10 +151,48 @@ int main() {
     return 0;
 }
 ```
-执行结果：可见对象ｂ的析构函数并未调用
+执行结果：可见对象ｂ的析构函数并未调用，在用delete删除b的操作中，我们只是对b指向的对象进行了释放，并没有调用析构函数，也就是说data指向的内存并没有被释放，而此时又没有指针指向刚才data指针指向的内存，从而造成了内存的丢失，更会造成内存的泄露。
 
 ![enter description here](./images/valgrind11.png)
 valgrind分析的结果：可见出现了20 bytes的内存泄漏
 
 ![enter description here](./images/valgrind12.png)
 
+#### 3. 没有将基类的析构函数定义为虚函数，当基类的指针指向子类时，==delete==该对象时，不会调用子类的析构函数
+
+``` cpp
+class person{
+public:
+    person(){
+        cout<<"基类构造函数运行中.....\n";
+    }
+    ~person(){
+        cout<<"基类析构函数运行中.....\n";
+    }//需要设置为virtual函数
+}; 
+class child:public person{
+private:
+    void* data;
+    const int size;
+    const char id;
+public:
+    child(int sz, char c):size(sz), id(c){
+        data = new char[size];
+        cout<<"派生类构造函数运行中.....\n";
+        cout << "child() " << id << " size = " << size << endl;
+    }
+    ~child(){
+        delete []data;
+        cout<<"派生类析构函数运行中.....\n";
+    }
+};
+int main(int argc, char** argv) {
+	
+	person *p = new child(20,'B');
+    delete p;
+	return 0;
+}
+```
+发现派生类的析构函数并未运用，这时析构函数不能够将构造函数建立的动态资源，进行有效的释放。有效的做法是将父类的析构函数的设为虚函数（==vartual==）
+
+![enter description here](./images/valgrind13.png)
