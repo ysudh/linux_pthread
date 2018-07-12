@@ -114,5 +114,47 @@ int fun1()
 ```
 上述代码段在运行中时，若fun2内部出现错误，但是==free==函数不能正常执行，所以出现的内存泄漏的情况。
 
+>其他出现段错误的情况，==使用未初始化的内存；在内存被释放后进行读/写；从已分配内存块的尾部进行读/写；不匹配地使用malloc/new/new[] 和 free/delete/delete[]；两次释放内存==等。并[利用valgrind检测](https://www.oschina.net/translate/valgrind-memcheck?cmp)
+
 ### c++中内存泄漏情况
+
+#### 不匹配使用==new[]== 和 ==delete[]==
+
+``` cpp
+int *p = new int[100];
+delete []p;//new[],delete []不匹配，导致99对象的内存空间被泄漏。
+```
+#### ==delet== void * 的指针，导致没有调用到对象的析构函数，析构的所有清理工作都没有去执行从而导致内存的泄露； 
+
+``` cpp
+class Object {
+private:
+    void* data;
+    const int size;
+    const char id;
+public:
+    Object(int sz, char c):size(sz), id(c){
+        data = new char[size];
+        cout << "Object() " << id << " size = " << size << endl;
+    }
+    ~Object(){
+        cout << "~Object() " << id << endl;
+        delete []data;      
+    }
+};
+int main() {
+    Object* a = new Object(10, 'A');//Object*指针指向一个Object对象；
+    void* b = new Object(20, 'B');//void*指针指向一个Object对象；
+    delete a;//执行delete，编译器自动调用析构函数；
+    delete b;//执行delete，编译器不会调用析构函数，导致data占用内存没有得到回收；
+
+    return 0;
+}
+```
+执行结果：可见对象ｂ的析构函数并未调用
+
+![enter description here](./images/valgrind11.png)
+valgrind分析的结果：可见出现了20 bytes的内存泄漏
+
+![enter description here](./images/valgrind12.png)
 
