@@ -7,11 +7,11 @@ grammar_cjkRuby: true
 ### 内存泄漏（memory leakage）概述
 
 定义：在编写应用程序的时候，程序分配了一块内存，但已经不再持有引用这块内存的对象（通常是指针），虽然这些内存被分配出去，但是无法收回，将无法被其他的进程所使用，我们说这块内存泄漏了，被泄漏的内存将在整个程序声明周期内都不可使用。
-主要原因：是在使用==new==或==malloc==动态分配堆上的内存空间，而并未使用==delete==或==free==及时释放掉内存。
+主要原因：是在使用new或malloc动态分配堆上的内存空间，而并未使用delete或free及时释放掉内存。
 
 ### 内存泄漏的场景
 
-#### 1. ==malloc==和==free==未成对出现
+#### 1. malloc和free未成对出现
 
 ``` cpp
 {
@@ -21,7 +21,7 @@ grammar_cjkRuby: true
     return 0;
 }
 ```
-上面的程序在编译，运行阶段都没有问题，但是由malloc分配的内存去无法回收。可以利用valrind定位内存泄漏的原因，如图用malloc分配了10 bytes内存，但是并未回收，==valgrind --tool=memcheck --leak-check=full ./test==
+上面的程序在编译，运行阶段都没有问题，但是由malloc分配的内存去无法回收。可以利用valrind定位内存泄漏的原因，如图用malloc分配了10 bytes内存，但是并未回收，valgrind --tool=memcheck --leak-check=full ./test
 
 ![enter description here](./images/valgrind01.png)
 
@@ -31,7 +31,7 @@ grammar_cjkRuby: true
 ``` cpp
 char* getMemory()
 {
-	char *p = (char *)malloc(30); 
+	char *p = (char *)malloc(10); 
 	return p;
 }
  
@@ -66,8 +66,6 @@ int main()
 }
 ```
 
-![enter description here](./images/valgrind02.png)
-
 #### 3. 在局部分配的内存未释放
 
 ``` cpp
@@ -97,7 +95,7 @@ int main()
 
 ![enter description here](./images/seg01.png)
 
-上述代码中，在函数==getheap==中分配的内存，但并未能得到释放，当该函数返回时，因为未返回分配的内存的首地址，所以程序将失去对这块内存的控制。
+上述代码中，在函数getheap中分配的内存，但并未能得到释放，当该函数返回时，因为未返回分配的内存的首地址，所以程序将失去对这块内存的控制。
 
 ![enter description here](./images/valgrind04_1.png)
 
@@ -112,19 +110,19 @@ int fun1()
     free(p);
 }
 ```
-上述代码段在运行中时，若fun2内部出现错误，但是==free==函数不能正常执行，所以出现的内存泄漏的情况。
+上述代码段在运行中时，若fun2内部出现错误，但是free函数不能正常执行，所以出现的内存泄漏的情况。
 
->其他出现段错误的情况，==使用未初始化的内存；在内存被释放后进行读/写；从已分配内存块的尾部进行读/写；不匹配地使用malloc/new/new[] 和 free/delete/delete[]；两次释放内存==等。并[利用valgrind检测](https://www.oschina.net/translate/valgrind-memcheck?cmp)
+>其他出现段错误的情况，使用未初始化的内存；在内存被释放后进行读/写；从已分配内存块的尾部进行读/写；不匹配地使用malloc/new/new[] 和 free/delete/delete[]；两次释放内存等。并[利用valgrind检测](https://www.oschina.net/translate/valgrind-memcheck?cmp)
 
 ### [c++中内存泄漏情况](https://blog.csdn.net/lovely20085901/article/details/39050085)
 
-#### 1. 不匹配使用==new[]== 和 ==delete[]==
+#### 1. 不匹配使用new[] 和 delete[]
 
 ``` cpp
 int *p = new int[100];
 delete []p;//new[],delete []不匹配，导致99对象的内存空间被泄漏。
 ```
-#### 2. ==delet== void * 的指针，导致没有调用到对象的析构函数，析构的所有清理工作都没有去执行从而导致内存的泄露； 
+#### 2. delete void * 的指针，导致没有调用到对象的析构函数，析构的所有清理工作都没有去执行从而导致内存的泄露； 
 
 ``` cpp
 class Object {
@@ -158,7 +156,7 @@ valgrind分析的结果：可见出现了20 bytes的内存泄漏
 
 ![enter description here](./images/valgrind12.png)
 
-#### 3. 没有将基类的析构函数定义为虚函数，当基类的指针指向子类时，==delete==该对象时，不会调用子类的析构函数
+#### 3. 没有将基类的析构函数定义为虚函数，当基类的指针指向子类时，delete该对象时，不会调用子类的析构函数
 
 ``` cpp
 class person{
@@ -193,6 +191,6 @@ int main(int argc, char** argv) {
 	return 0;
 }
 ```
-发现派生类的析构函数并未运用，这时析构函数不能够将构造函数建立的动态资源，进行有效的释放。有效的做法是将父类的析构函数的设为虚函数（==vartual==）
+发现派生类的析构函数并未运用，这时析构函数不能够将构造函数建立的动态资源，进行有效的释放。有效的做法是将父类的析构函数的设为虚函数（vartual）
 
 ![enter description here](./images/valgrind13.png)
